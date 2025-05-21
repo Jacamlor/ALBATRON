@@ -79,13 +79,13 @@ if uploaded_file:
             pdf.chapter_subtitle(color)
             pdf.chapter_body_with_right_summary(color_group)
 
-    pdf_buffer = BytesIO()
-    pdf.output(pdf_buffer)
-    st.success("✅ PDF generado correctamente")
+    pdf_data = pdf.output(dest='S').encode('latin1')
+pdf_buffer = BytesIO(pdf_data)
+st.success("✅ PDF generado correctamente")
 
-    st.download_button(
-        label="📥 Descargar PDF",
-        data=pdf_buffer.getvalue(),
-        file_name="informe_por_albaran.pdf",
-        mime="application/pdf"
-    )
+st.download_button(
+    label="📥 Descargar PDF",
+    data=pdf_buffer,
+    file_name="informe_por_albaran.pdf",
+    mime="application/pdf"
+)
