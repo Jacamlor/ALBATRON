@@ -64,15 +64,15 @@ if uploaded_file:
     try:
         df_raw = pd.read_csv(uploaded_file, sep="\t", header=None, skiprows=1)
 
-     df = pd.DataFrame({
-    "Código": df_raw[0],
-    "Descripcion": df_raw[1],
-    "Talla": df_raw[2],
-    "Transfer": df_raw[3],
-    "Entregadas": df_raw[4],
-    "Color": df_raw[5],
-    "NºAlbarán": df_raw[6]
-})
+         df = pd.DataFrame({
+            "Código": df_raw[0],
+            "Descripcion": df_raw[1],
+            "Talla": df_raw[2],
+            "Transfer": df_raw[3],
+            "Entregadas": df_raw[4],
+            "Color": df_raw[5],
+            "NºAlbarán": df_raw[6]
+        })
 
 
         df["Entregadas"] = pd.to_numeric(df["Entregadas"].astype(str).str.replace(",", "."), errors='coerce').fillna(0).astype(int)
