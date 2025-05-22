@@ -3,9 +3,9 @@ import pandas as pd
 from fpdf import FPDF
 from io import BytesIO
 
-LOGO_PATH = "logo_friking.png"  # Asegúrate de tener este archivo en la misma carpeta que app.py
+LOGO_PATH = "logo_friking.png"  # El logo debe estar en el mismo directorio que este script
 
-st.set_page_config(page_title="ALBATRON", layout="wide")
+st.set_page_config(page_title="Generador de Informes PDF desde TXT", layout="wide")
 
 class ReportPDF(FPDF):
     def header(self):
@@ -19,7 +19,7 @@ class ReportPDF(FPDF):
     def chapter_subtitle(self, color, total_unidades):
         self.set_font("Arial", "B", 11)
         self.set_fill_color(230, 230, 230)
-        texto = f"Color: {color} – Total unidades: {total_unidades}"
+        texto = f"Color: {color} - Total unidades: {total_unidades}"
         self.cell(0, 10, texto, ln=True, fill=True)
         self.ln(2)
 
@@ -80,6 +80,7 @@ if uploaded_file:
         for albaran, albaran_group in df_sorted.groupby("NºAlbarán"):
             pdf.albaran_number = albaran
             pdf.add_page()
+
             for color, color_group in albaran_group.groupby("Color"):
                 total_unidades_color = color_group["Entregadas"].sum()
                 pdf.chapter_subtitle(color, total_unidades_color)
@@ -91,13 +92,12 @@ if uploaded_file:
                         pdf.ln(8)
                     pdf.chapter_body_with_right_summary(transfer_group)
 
-        pdf_data = pdf.output(dest='S').encode('latin1')
-        pdf_buffer = BytesIO(pdf_data)
-
+        pdf_buffer = BytesIO()
+        pdf.output(pdf_buffer)
         st.success("✅ PDF generado correctamente")
         st.download_button(
             label="📥 Descargar PDF",
-            data=pdf_buffer,
+            data=pdf_buffer.getvalue(),
             file_name="informe_por_albaran.pdf",
             mime="application/pdf"
         )
