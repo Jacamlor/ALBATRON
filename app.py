@@ -20,7 +20,8 @@ class ReportPDF(FPDF):
 
     def chapter_body_with_right_summary(self, data):
         self.set_font("Arial", "", 10)
-        col_widths = [30, 20, 30, 30, 20]
+        col_widths = [25, 50, 15, 20, 25, 15]  # Ajustado para incluir Descripcion
+
         resumen_talla = data.groupby("Talla")["Entregadas"].sum().reset_index()
         resumen_transfer = data.groupby("ClaveCriterioX")["Entregadas"].sum().reset_index()
 
@@ -38,10 +39,11 @@ class ReportPDF(FPDF):
             if i < len(data_rows):
                 row = data_rows.iloc[i]
                 self.cell(col_widths[0], 8, str(row["Código"]), border=1)
-                self.cell(col_widths[1], 8, str(row["Talla"]), border=1)
-                self.cell(col_widths[2], 8, str(row["Entregadas"]), border=1)
-                self.cell(col_widths[3], 8, str(row["ClaveCriterioX"]), border=1)
-                self.cell(col_widths[4], 8, "", border=1)
+                self.cell(col_widths[1], 8, str(row["Descripcion"]), border=1)
+                self.cell(col_widths[2], 8, str(row["Talla"]), border=1)
+                self.cell(col_widths[3], 8, str(row["Entregadas"]), border=1)
+                self.cell(col_widths[4], 8, str(row["ClaveCriterioX"]), border=1)
+                self.cell(col_widths[5], 8, "", border=1)
             else:
                 for w in col_widths:
                     self.cell(w, 8, "", border=0)
@@ -61,9 +63,8 @@ st.title("📄 ALBATRON")
 uploaded_file = st.file_uploader("Sube tu archivo TXT (tabulado)", type=["txt"])
 if uploaded_file:
     try:
-        df = pd.read_csv(uploaded_file, sep='\\t', dtype=str)
-        df = df.iloc[:, :6]
-        df.columns = ["Código", "NºAlbarán", "Talla", "Entregadas", "Color", "ClaveCriterioX"]
+        df = pd.read_csv(uploaded_file, sep="\\t", dtype=str)
+        df = df[["Código", "Descripcion", "NºAlbarán", "Talla", "Entregadas", "Color", "ClaveCriterioX"]]
         df["Entregadas"] = pd.to_numeric(df["Entregadas"], errors='coerce').fillna(0).astype(int)
         df_sorted = df.sort_values(by=["Color", "ClaveCriterioX"])
 
@@ -76,6 +77,7 @@ if uploaded_file:
             for color, color_group in albaran_group.groupby("Color"):
                 total_unidades_color = color_group["Entregadas"].sum()
                 pdf.chapter_subtitle(color, total_unidades_color)
+
                 transfer_groups = list(color_group.groupby("ClaveCriterioX"))
                 for i, (transfer, transfer_group) in enumerate(transfer_groups):
                     if i > 0:
