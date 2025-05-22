@@ -20,7 +20,7 @@ class ReportPDF(FPDF):
 
     def chapter_body_with_right_summary(self, data):
         self.set_font("Arial", "", 10)
-        col_widths = [25, 50, 15, 20, 25, 15]
+        col_widths = [25, 50, 15, 20, 25, 15]  # Código, Descripción, Talla, Entregadas, Transfer, Vacía
 
         resumen_talla = data.groupby("Talla")["Entregadas"].sum().reset_index()
         resumen_transfer = data.groupby("Transfer")["Entregadas"].sum().reset_index()
@@ -62,23 +62,18 @@ st.title("📄 ALBATRON")
 uploaded_file = st.file_uploader("Sube tu archivo TXT (tabulado)", type=["txt"])
 if uploaded_file:
     try:
-        df_raw = pd.read_csv(uploaded_file, sep="\t", header=None, skiprows=1)
+        df = pd.read_csv(uploaded_file, sep="\t")
 
-         df = pd.DataFrame({
-            "Código": df_raw[0],
-            "Descripcion": df_raw[1],
-            "Talla": df_raw[2],
-            "Transfer": df_raw[3],
-            "Entregadas": df_raw[4],
-            "Color": df_raw[5],
-            "NºAlbarán": df_raw[6]
-        })
+        # Renombrar columna de transferencia
+        df = df.rename(columns={"ClaveCriterioX": "Transfer"})
 
+        # Asegurar tipos
+        df["Entregadas"] = pd.to_numeric(df["Entregadas"], errors="coerce").fillna(0).astype(int)
 
-        df["Entregadas"] = pd.to_numeric(df["Entregadas"].astype(str).str.replace(",", "."), errors='coerce').fillna(0).astype(int)
-
+        # Orden lógico
         df_sorted = df.sort_values(by=["NºAlbarán", "Color", "Código", "Talla"])
 
+        # Generar PDF
         pdf = ReportPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
 
@@ -90,7 +85,7 @@ if uploaded_file:
                 pdf.chapter_subtitle(color, total_unidades_color)
                 pdf.chapter_body_with_right_summary(color_group)
 
-        pdf_output = pdf.output(dest='S').encode('latin1')
+        pdf_output = pdf.output(dest="S").encode("latin1")
         pdf_buffer = BytesIO()
         pdf_buffer.write(pdf_output)
         pdf_buffer.seek(0)
