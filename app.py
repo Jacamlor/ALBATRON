@@ -3,19 +3,24 @@ import pandas as pd
 from fpdf import FPDF
 from io import BytesIO
 
+LOGO_PATH = "logo_friking.png"  # Asegúrate de tener este archivo en la misma carpeta que app.py
+
 st.set_page_config(page_title="Generador de Informes PDF desde TXT", layout="wide")
 
 class ReportPDF(FPDF):
     def header(self):
-        if hasattr(self, 'albaran_number'):
-            self.set_font("Arial", "B", 14)
-            self.cell(0, 10, f"Nº Albarán: {self.albaran_number}", ln=True, align="C")
-            self.ln(5)
+        # Logo
+        self.image(LOGO_PATH, x=10, y=8, w=30)
+        self.set_font("Arial", "B", 14)
+        self.set_xy(50, 10)
+        self.cell(0, 10, f"Nº Albarán: {self.albaran_number}", ln=True, align="L")
+        self.ln(10)
 
-    def chapter_subtitle(self, color):
+    def chapter_subtitle(self, color, total_unidades):
         self.set_font("Arial", "B", 11)
         self.set_fill_color(230, 230, 230)
-        self.cell(0, 10, f"Color: {color}", ln=True, fill=True)
+        texto = f"Color: {color} – Total unidades: {total_unidades}"
+        self.cell(0, 10, texto, ln=True, fill=True)
         self.ln(2)
 
     def chapter_body_with_right_summary(self, data):
@@ -76,13 +81,14 @@ if uploaded_file:
             pdf.albaran_number = albaran
             pdf.add_page()
             for color, color_group in albaran_group.groupby("Color"):
-                pdf.chapter_subtitle(color)
+                total_unidades_color = color_group["Entregadas"].sum()
+                pdf.chapter_subtitle(color, total_unidades_color)
 
                 transfer_groups = list(color_group.groupby("ClaveCriterioX"))
                 for i, (transfer, transfer_group) in enumerate(transfer_groups):
                     if i > 0:
-                        pdf.ln(8)  # primera línea en blanco
-                        pdf.ln(8)  # segunda línea en blanco
+                        pdf.ln(8)
+                        pdf.ln(8)
                     pdf.chapter_body_with_right_summary(transfer_group)
 
         pdf_data = pdf.output(dest='S').encode('latin1')
