@@ -5,7 +5,7 @@ from io import BytesIO
 
 LOGO_PATH = "logo_friking.png"  # El logo debe estar en el mismo directorio que este script
 
-st.set_page_config(page_title="Generador de Informes PDF desde TXT", layout="wide")
+st.set_page_config(page_title="ALBATRON", layout="wide")
 
 class ReportPDF(FPDF):
     def header(self):
