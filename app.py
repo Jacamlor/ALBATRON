@@ -18,44 +18,32 @@ class ReportPDF(FPDF):
         self.cell(0, 10, f"Color: {color}", ln=True, fill=True)
         self.ln(2)
 
-    def chapter_body_with_right_summary(self, data):
+    def chapter_body(self, data):
         self.set_font("Arial", "", 10)
-        col_widths = [30, 20, 30, 30, 20]
-        headers = ["Código", "Talla", "Producir", "Transfer", ""]
+        col_widths = [30, 20, 30, 30, 20]  # Añadimos columna vacía
+        for _, row in data.iterrows():
+            self.cell(col_widths[0], 8, str(row["Código"]), border=1)
+            self.cell(col_widths[1], 8, str(row["Talla"]), border=1)
+            self.cell(col_widths[2], 8, str(row["Entregadas"]), border=1)
+            self.cell(col_widths[3], 8, str(row["ClaveCriterioX"]), border=1)
+            self.cell(col_widths[4], 8, "", border=1)  # columna vacía
+            self.ln()
 
-        resumen_talla = data.groupby("Talla")["Entregadas"].sum().reset_index()
-        resumen_transfer = data.groupby("ClaveCriterioX")["Entregadas"].sum().reset_index()
+    def color_summary(self, data):
+        self.ln(2)
+        self.set_font("Arial", "B", 10)
+        self.cell(0, 8, "Resumen por Talla:", ln=True)
+        self.set_font("Arial", "", 10)
+        for talla, total in data.groupby("Talla")["Entregadas"].sum().items():
+            self.cell(0, 8, f"{talla}: {total}", ln=True)
 
-        resumen_text = ["Resumen por Talla:"]
-        for _, row in resumen_talla.iterrows():
-            resumen_text.append(f"{row['Talla']}: {row['Entregadas']}")
-        resumen_text.append("Resumen por Transfer:")
-        for _, row in resumen_transfer.iterrows():
-            resumen_text.append(f"Transfer {row['ClaveCriterioX']}: {row['Entregadas']}")
-
-        max_lines = max(len(data), len(resumen_text))
-
-        for i in range(max_lines):
-            if i < len(data):
-                row = data.iloc[i]
-                self.cell(col_widths[0], 8, str(row["Código"]), border=1)
-                self.cell(col_widths[1], 8, str(row["Talla"]), border=1)
-                self.cell(col_widths[2], 8, str(row["Entregadas"]), border=1)
-                self.cell(col_widths[3], 8, str(row["ClaveCriterioX"]), border=1)
-                self.cell(col_widths[4], 8, "", border=1)
-            else:
-                for w in col_widths:
-                    self.cell(w, 8, "", border=0)
-
-            self.cell(10, 8, "", border=0)
-            if i < len(resumen_text):
-                if "Resumen" in resumen_text[i]:
-                    self.set_font("Arial", "B", 10)
-                else:
-                    self.set_font("Arial", "", 10)
-                self.cell(0, 8, resumen_text[i], ln=True)
-            else:
-                self.ln()
+        self.ln(2)
+        self.set_font("Arial", "B", 10)
+        self.cell(0, 8, "Resumen por Transfer:", ln=True)
+        self.set_font("Arial", "", 10)
+        for transfer, total in data.groupby("ClaveCriterioX")["Entregadas"].sum().items():
+            self.cell(0, 8, f"Transfer {transfer}: {total}", ln=True)
+        self.ln(5)
 
 st.title("📄 Generador de Informes PDF desde TXT")
 
@@ -76,13 +64,13 @@ if uploaded_file:
             pdf.albaran_number = albaran
             pdf.add_page()
             for color, color_group in albaran_group.groupby("Color"):
+                pdf.chapter_subtitle(color)
                 if color_group["ClaveCriterioX"].nunique() > 1:
                     for transfer, transfer_group in color_group.groupby("ClaveCriterioX"):
-                        pdf.chapter_subtitle(f"{color} - Transfer {transfer}")
-                        pdf.chapter_body_with_right_summary(transfer_group)
+                        pdf.chapter_body(transfer_group)
                 else:
-                    pdf.chapter_subtitle(color)
-                    pdf.chapter_body_with_right_summary(color_group)
+                    pdf.chapter_body(color_group)
+                pdf.color_summary(color_group)
 
         pdf_data = pdf.output(dest='S').encode('latin1')
         pdf_buffer = BytesIO(pdf_data)
@@ -96,3 +84,4 @@ if uploaded_file:
         )
     except Exception as e:
         st.error(f"❌ Error al procesar el archivo: {e}")
+
