@@ -20,17 +20,17 @@ class ReportPDF(FPDF):
 
     def chapter_body_with_right_summary(self, data):
         self.set_font("Arial", "", 10)
-        col_widths = [25, 50, 15, 20, 25, 15]
+        col_widths = [25, 50, 15, 20, 25, 15]  # código, desc, talla, ent, transfer, vacía
 
         resumen_talla = data.groupby("Talla")["Entregadas"].sum().reset_index()
-        resumen_transfer = data.groupby("ClaveCriterioX")["Entregadas"].sum().reset_index()
+        resumen_transfer = data.groupby("Transfer")["Entregadas"].sum().reset_index()
 
         resumen_text = ["Resumen por Talla:"]
         for _, row in resumen_talla.iterrows():
             resumen_text.append(f"{row['Talla']}: {row['Entregadas']}")
         resumen_text.append("Resumen por Transfer:")
         for _, row in resumen_transfer.iterrows():
-            resumen_text.append(f"Transfer {row['ClaveCriterioX']}: {row['Entregadas']}")
+            resumen_text.append(f"Transfer {row['Transfer']}: {row['Entregadas']}")
 
         max_lines = max(len(data), len(resumen_text))
         data_rows = data.reset_index(drop=True)
@@ -42,7 +42,7 @@ class ReportPDF(FPDF):
                 self.cell(col_widths[1], 8, str(row["Descripcion"]), border=1)
                 self.cell(col_widths[2], 8, str(row["Talla"]), border=1)
                 self.cell(col_widths[3], 8, str(row["Entregadas"]), border=1)
-                self.cell(col_widths[4], 8, str(row["ClaveCriterioX"]), border=1)
+                self.cell(col_widths[4], 8, str(row["Transfer"]), border=1)
                 self.cell(col_widths[5], 8, "", border=1)
             else:
                 for w in col_widths:
@@ -63,10 +63,9 @@ st.title("📄 ALBATRON")
 uploaded_file = st.file_uploader("Sube tu archivo TXT (tabulado)", type=["txt"])
 if uploaded_file:
     try:
-        # Leer el archivo ignorando cabecera, salto de la 1ª fila
         df_raw = pd.read_csv(uploaded_file, sep="\t", header=None, skiprows=1)
 
-        # Mapear las columnas reales del archivo
+        # Extraemos columnas correctamente según análisis anterior
         df = pd.DataFrame({
             "Código": df_raw[0],
             "Descripcion": df_raw[2],
@@ -74,12 +73,13 @@ if uploaded_file:
             "Talla": df_raw[4],
             "Entregadas": df_raw[5],
             "Color": df_raw[6],
-            "ClaveCriterioX": df_raw[3]  # Usamos NºAlbarán también como transfer si no hay campo específico
+            "Transfer": df_raw[7] if df_raw.shape[1] > 7 else "--"
         })
 
+        # Limpieza y formato
         df["Entregadas"] = pd.to_numeric(df["Entregadas"].astype(str).str.replace(",", "."), errors='coerce').fillna(0).astype(int)
 
-        df_sorted = df.sort_values(by=["NºAlbarán", "Color", "ClaveCriterioX"])
+        df_sorted = df.sort_values(by=["NºAlbarán", "Color", "Código", "Talla"])
 
         pdf = ReportPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
