@@ -3,21 +3,18 @@ import pandas as pd
 from fpdf import FPDF
 from io import BytesIO
 
-
 st.set_page_config(page_title="ALBATRON", layout="wide")
 
 class ReportPDF(FPDF):
-
-            self.set_font("Arial", "B", 14)
-            self.set_xy(70, 10)
-            self.cell(0, 10, f"Nº Albarán: {self.albaran_number}", ln=True, align="L")
-            self.ln(10)
-
+    def header(self):
+        self.set_font("Arial", "B", 14)
+        self.cell(0, 10, f"Nº Albarán: {self.albaran_number}", ln=True, align="L")
+        self.ln(10)
 
     def chapter_subtitle(self, color, total_unidades):
         self.set_font("Arial", "B", 11)
         self.set_fill_color(230, 230, 230)
-        texto = f"Color: {color} - Total unidades: {total_unidades}"  # usamos "-" para evitar errores unicode
+        texto = f"Color: {color} - Total unidades: {total_unidades}"
         self.cell(0, 10, texto, ln=True, fill=True)
         self.ln(2)
 
@@ -35,8 +32,8 @@ class ReportPDF(FPDF):
             resumen_text.append(f"Transfer {row['ClaveCriterioX']}: {row['Entregadas']}")
 
         max_lines = max(len(data), len(resumen_text))
-
         data_rows = data.reset_index(drop=True)
+
         for i in range(max_lines):
             if i < len(data_rows):
                 row = data_rows.iloc[i]
@@ -68,7 +65,6 @@ if uploaded_file:
         df = df.iloc[:, :6]
         df.columns = ["Código", "NºAlbarán", "Talla", "Entregadas", "Color", "ClaveCriterioX"]
         df["Entregadas"] = pd.to_numeric(df["Entregadas"], errors='coerce').fillna(0).astype(int)
-
         df_sorted = df.sort_values(by=["Color", "ClaveCriterioX"])
 
         pdf = ReportPDF()
@@ -77,11 +73,9 @@ if uploaded_file:
         for albaran, albaran_group in df_sorted.groupby("NºAlbarán"):
             pdf.albaran_number = albaran
             pdf.add_page()
-
             for color, color_group in albaran_group.groupby("Color"):
                 total_unidades_color = color_group["Entregadas"].sum()
                 pdf.chapter_subtitle(color, total_unidades_color)
-
                 transfer_groups = list(color_group.groupby("ClaveCriterioX"))
                 for i, (transfer, transfer_group) in enumerate(transfer_groups):
                     if i > 0:
@@ -89,7 +83,6 @@ if uploaded_file:
                         pdf.ln(8)
                     pdf.chapter_body_with_right_summary(transfer_group)
 
-        # ✅ Solución final al error de BytesIO
         pdf_output = pdf.output(dest='S').encode('latin1')
         pdf_buffer = BytesIO()
         pdf_buffer.write(pdf_output)
@@ -98,7 +91,7 @@ if uploaded_file:
         st.success("✅ PDF generado correctamente")
         st.download_button(
             label="📥 Descargar PDF",
-            data=pdf_buffer,
+            data=pdf_buffer.getvalue(),
             file_name="informe_por_albaran.pdf",
             mime="application/pdf"
         )
