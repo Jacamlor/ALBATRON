@@ -63,9 +63,12 @@ st.title("📄 ALBATRON")
 uploaded_file = st.file_uploader("Sube tu archivo TXT (tabulado)", type=["txt"])
 if uploaded_file:
     try:
-        df = pd.read_csv(uploaded_file, sep='\\t', dtype=str)
-        df = df[["Código", "Descripcion", "NºAlbarán", "Talla", "Entregadas", "Color", "ClaveCriterioX"]]
-        df = df.dropna(subset=["NºAlbarán"])  # eliminar filas sin albarán válido
+        # Leemos el archivo sin encabezado y asignamos manualmente las columnas
+        df = pd.read_csv(uploaded_file, sep='\\t', header=None)
+        df.columns = ["Código", "Descripcion", "NºAlbarán", "Talla", "Entregadas", "Color", "ClaveCriterioX"]
+
+        # Limpiamos valores no válidos
+        df = df.dropna(subset=["NºAlbarán"])
         df["Entregadas"] = pd.to_numeric(df["Entregadas"], errors='coerce').fillna(0).astype(int)
 
         df_sorted = df.sort_values(by=["NºAlbarán", "Color", "ClaveCriterioX"])
@@ -76,12 +79,9 @@ if uploaded_file:
         for albaran, albaran_group in df_sorted.groupby("NºAlbarán"):
             pdf.albaran_number = albaran
             pdf.add_page()
-
             for color, color_group in albaran_group.groupby("Color"):
                 total_unidades_color = color_group["Entregadas"].sum()
                 pdf.chapter_subtitle(color, total_unidades_color)
-
-                # Ya no separamos por transfer a nivel de página
                 pdf.chapter_body_with_right_summary(color_group)
 
         pdf_output = pdf.output(dest='S').encode('latin1')
