@@ -20,7 +20,7 @@ class ReportPDF(FPDF):
 
     def chapter_body_with_right_summary(self, data):
         self.set_font("Arial", "", 10)
-        col_widths = [25, 50, 15, 20, 25, 15]  # Código, Descripción, Talla, Entregadas, Transfer, Vacía
+        col_widths = [25, 50, 15, 20, 25, 15]  # Código, Desc, Talla, Entregadas, Transfer, Vacía
 
         resumen_talla = data.groupby("Talla")["Entregadas"].sum().reset_index()
         resumen_transfer = data.groupby("Transfer")["Entregadas"].sum().reset_index()
@@ -32,30 +32,31 @@ class ReportPDF(FPDF):
         for _, row in resumen_transfer.iterrows():
             resumen_text.append(f"Transfer {row['Transfer']}: {row['Entregadas']}")
 
-        max_lines = max(len(data), len(resumen_text))
-        data_rows = data.reset_index(drop=True)
+        resumen_idx = 0
 
-        for i in range(max_lines):
-            if i < len(data_rows):
-                row = data_rows.iloc[i]
+        transfer_groups = list(data.groupby("Transfer"))
+        for i, (transfer, group) in enumerate(transfer_groups):
+            if i > 0:
+                self.ln(16)  # espacio equivalente a dos filas
+
+            for _, row in group.iterrows():
                 self.cell(col_widths[0], 8, str(row["Código"]), border=1)
                 self.cell(col_widths[1], 8, str(row["Descripcion"]), border=1)
                 self.cell(col_widths[2], 8, str(row["Talla"]), border=1)
                 self.cell(col_widths[3], 8, str(row["Entregadas"]), border=1)
                 self.cell(col_widths[4], 8, str(row["Transfer"]), border=1)
                 self.cell(col_widths[5], 8, "", border=1)
-            else:
-                for w in col_widths:
-                    self.cell(w, 8, "", border=0)
-            self.cell(10, 8, "", border=0)
-            if i < len(resumen_text):
-                if "Resumen" in resumen_text[i]:
-                    self.set_font("Arial", "B", 10)
+
+                self.cell(10, 8, "", border=0)
+                if resumen_idx < len(resumen_text):
+                    if "Resumen" in resumen_text[resumen_idx]:
+                        self.set_font("Arial", "B", 10)
+                    else:
+                        self.set_font("Arial", "", 10)
+                    self.cell(0, 8, resumen_text[resumen_idx], ln=True)
+                    resumen_idx += 1
                 else:
-                    self.set_font("Arial", "", 10)
-                self.cell(0, 8, resumen_text[i], ln=True)
-            else:
-                self.ln()
+                    self.ln()
 
 st.title("📄 ALBATRON")
 
@@ -64,16 +65,12 @@ if uploaded_file:
     try:
         df = pd.read_csv(uploaded_file, sep="\t")
 
-        # Renombrar columna de transferencia
+        # Renombrar columna si es necesario
         df = df.rename(columns={"ClaveCriterioX": "Transfer"})
 
-        # Asegurar tipos
         df["Entregadas"] = pd.to_numeric(df["Entregadas"], errors="coerce").fillna(0).astype(int)
-
-        # Orden lógico
         df_sorted = df.sort_values(by=["NºAlbarán", "Color", "Código", "Talla"])
 
-        # Generar PDF
         pdf = ReportPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
 
