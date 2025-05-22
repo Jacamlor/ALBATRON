@@ -63,13 +63,19 @@ st.title("📄 ALBATRON")
 uploaded_file = st.file_uploader("Sube tu archivo TXT (tabulado)", type=["txt"])
 if uploaded_file:
     try:
-        # Leemos el archivo sin encabezado y asignamos manualmente las columnas
-        df = pd.read_csv(uploaded_file, sep='\\t', header=None)
-        df.columns = ["Código", "Descripcion", "NºAlbarán", "Talla", "Entregadas", "Color", "ClaveCriterioX"]
+        # Leer sin encabezado y descartar primera fila (es cabecera errónea)
+        df_raw = pd.read_csv(uploaded_file, sep="\t", header=None, skiprows=1)
 
-        # Limpiamos valores no válidos
-        df = df.dropna(subset=["NºAlbarán"])
-        df["Entregadas"] = pd.to_numeric(df["Entregadas"], errors='coerce').fillna(0).astype(int)
+        # Asignar columnas manualmente
+        df_raw.columns = ["Código", "Descripcion", "NºAlbarán", "Talla", "Entregadas", "Color", "ClaveCriterioX", "_extra"]
+
+        # Si la última columna está vacía o no sirve, la eliminamos
+        if "_extra" in df_raw.columns:
+            df_raw = df_raw.drop(columns=["_extra"])
+
+        # Eliminar filas sin albarán
+        df = df_raw.dropna(subset=["NºAlbarán"])
+        df["Entregadas"] = pd.to_numeric(df["Entregadas"].str.replace(",", "."), errors='coerce').fillna(0).astype(int)
 
         df_sorted = df.sort_values(by=["NºAlbarán", "Color", "ClaveCriterioX"])
 
