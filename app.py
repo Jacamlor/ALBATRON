@@ -20,7 +20,7 @@ class ReportPDF(FPDF):
 
     def chapter_body_with_right_summary(self, data):
         self.set_font("Arial", "", 10)
-        col_widths = [25, 50, 15, 20, 25, 15]  # código, desc, talla, ent, transfer, vacía
+        col_widths = [25, 50, 15, 20, 25, 15]
 
         resumen_talla = data.groupby("Talla")["Entregadas"].sum().reset_index()
         resumen_transfer = data.groupby("Transfer")["Entregadas"].sum().reset_index()
@@ -47,7 +47,6 @@ class ReportPDF(FPDF):
             else:
                 for w in col_widths:
                     self.cell(w, 8, "", border=0)
-
             self.cell(10, 8, "", border=0)
             if i < len(resumen_text):
                 if "Resumen" in resumen_text[i]:
@@ -65,18 +64,16 @@ if uploaded_file:
     try:
         df_raw = pd.read_csv(uploaded_file, sep="\t", header=None, skiprows=1)
 
-        # Extraemos columnas correctamente según análisis anterior
         df = pd.DataFrame({
             "Código": df_raw[0],
-            "Descripcion": df_raw[2],
-            "NºAlbarán": df_raw[3],
-            "Talla": df_raw[4],
-            "Entregadas": df_raw[5],
-            "Color": df_raw[6],
-            "Transfer": df_raw[7] if df_raw.shape[1] > 7 else "--"
+            "Talla": df_raw[1],
+            "Entregadas": df_raw[2],
+            "Transfer": df_raw[3],
+            "Descripcion": df_raw[4],
+            "Color": df_raw[5],
+            "NºAlbarán": df_raw[6]
         })
 
-        # Limpieza y formato
         df["Entregadas"] = pd.to_numeric(df["Entregadas"].astype(str).str.replace(",", "."), errors='coerce').fillna(0).astype(int)
 
         df_sorted = df.sort_values(by=["NºAlbarán", "Color", "Código", "Talla"])
