@@ -3,13 +3,12 @@ import pandas as pd
 from fpdf import FPDF
 from io import BytesIO
 
-LOGO_PATH = "logo_friking.png"  # El logo debe estar en el mismo directorio que este script
+LOGO_PATH = "logo_friking.png"  # Debe estar en la misma carpeta que app.py
 
 st.set_page_config(page_title="ALBATRON", layout="wide")
 
 class ReportPDF(FPDF):
     def header(self):
-        # Logo
         self.image(LOGO_PATH, x=10, y=8, w=30)
         self.set_font("Arial", "B", 14)
         self.set_xy(50, 10)
@@ -19,7 +18,7 @@ class ReportPDF(FPDF):
     def chapter_subtitle(self, color, total_unidades):
         self.set_font("Arial", "B", 11)
         self.set_fill_color(230, 230, 230)
-        texto = f"Color: {color} - Total unidades: {total_unidades}"
+        texto = f"Color: {color} - Total unidades: {total_unidades}"  # usamos "-" para evitar errores unicode
         self.cell(0, 10, texto, ln=True, fill=True)
         self.ln(2)
 
@@ -52,7 +51,6 @@ class ReportPDF(FPDF):
                     self.cell(w, 8, "", border=0)
 
             self.cell(10, 8, "", border=0)
-
             if i < len(resumen_text):
                 if "Resumen" in resumen_text[i]:
                     self.set_font("Arial", "B", 10)
@@ -92,14 +90,19 @@ if uploaded_file:
                         pdf.ln(8)
                     pdf.chapter_body_with_right_summary(transfer_group)
 
+        # ✅ Solución final al error de BytesIO
+        pdf_output = pdf.output(dest='S').encode('latin1')
         pdf_buffer = BytesIO()
-        pdf.output(pdf_buffer)
+        pdf_buffer.write(pdf_output)
+        pdf_buffer.seek(0)
+
         st.success("✅ PDF generado correctamente")
         st.download_button(
             label="📥 Descargar PDF",
-            data=pdf_buffer.getvalue(),
+            data=pdf_buffer,
             file_name="informe_por_albaran.pdf",
             mime="application/pdf"
         )
+
     except Exception as e:
         st.error(f"❌ Error al procesar el archivo: {e}")
