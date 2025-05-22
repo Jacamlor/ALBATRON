@@ -10,16 +10,16 @@ st.set_page_config(page_title="ALBATRON", layout="wide")
 class ReportPDF(FPDF):
     def header(self):
         try:
-        self.image(LOGO_PATH, x=10, y=8, w=50)  # Aumentamos visibilidad
+            self.image(LOGO_PATH, x=10, y=8, w=50)  # Aumentamos visibilidad
         except RuntimeError:
-        self.set_font("Arial", "B", 12)
-        self.set_text_color(255, 0, 0)
-        self.cell(0, 10, "Logo no encontrado", ln=True)
+            self.set_font("Arial", "B", 12)
+            self.set_text_color(255, 0, 0)
+            self.cell(0, 10, "Logo no encontrado", ln=True)
 
-    self.set_font("Arial", "B", 14)
-    self.set_xy(70, 10)
-    self.cell(0, 10, f"Nº Albarán: {self.albaran_number}", ln=True, align="L")
-    self.ln(10)
+            self.set_font("Arial", "B", 14)
+            self.set_xy(70, 10)
+            self.cell(0, 10, f"Nº Albarán: {self.albaran_number}", ln=True, align="L")
+            self.ln(10)
 
 
     def chapter_subtitle(self, color, total_unidades):
