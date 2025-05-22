@@ -20,7 +20,7 @@ class ReportPDF(FPDF):
 
     def chapter_body_with_right_summary(self, data):
         self.set_font("Arial", "", 10)
-        col_widths = [25, 50, 15, 20, 25, 15]  # Ajustado para incluir Descripcion
+        col_widths = [25, 50, 15, 20, 25, 15]
 
         resumen_talla = data.groupby("Talla")["Entregadas"].sum().reset_index()
         resumen_transfer = data.groupby("ClaveCriterioX")["Entregadas"].sum().reset_index()
@@ -63,10 +63,12 @@ st.title("📄 ALBATRON")
 uploaded_file = st.file_uploader("Sube tu archivo TXT (tabulado)", type=["txt"])
 if uploaded_file:
     try:
-        df = pd.read_csv(uploaded_file, sep="\\t", dtype=str)
+        df = pd.read_csv(uploaded_file, sep='\\t', dtype=str)
         df = df[["Código", "Descripcion", "NºAlbarán", "Talla", "Entregadas", "Color", "ClaveCriterioX"]]
+        df = df.dropna(subset=["NºAlbarán"])  # eliminar filas sin albarán válido
         df["Entregadas"] = pd.to_numeric(df["Entregadas"], errors='coerce').fillna(0).astype(int)
-        df_sorted = df.sort_values(by=["Color", "ClaveCriterioX"])
+
+        df_sorted = df.sort_values(by=["NºAlbarán", "Color", "ClaveCriterioX"])
 
         pdf = ReportPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
@@ -74,16 +76,13 @@ if uploaded_file:
         for albaran, albaran_group in df_sorted.groupby("NºAlbarán"):
             pdf.albaran_number = albaran
             pdf.add_page()
+
             for color, color_group in albaran_group.groupby("Color"):
                 total_unidades_color = color_group["Entregadas"].sum()
                 pdf.chapter_subtitle(color, total_unidades_color)
 
-                transfer_groups = list(color_group.groupby("ClaveCriterioX"))
-                for i, (transfer, transfer_group) in enumerate(transfer_groups):
-                    if i > 0:
-                        pdf.ln(8)
-                        pdf.ln(8)
-                    pdf.chapter_body_with_right_summary(transfer_group)
+                # Ya no separamos por transfer a nivel de página
+                pdf.chapter_body_with_right_summary(color_group)
 
         pdf_output = pdf.output(dest='S').encode('latin1')
         pdf_buffer = BytesIO()
