@@ -3,18 +3,10 @@ import pandas as pd
 from fpdf import FPDF
 from io import BytesIO
 
-LOGO_PATH = "logo_friking.png"  # Debe estar en la misma carpeta que app.py
 
 st.set_page_config(page_title="ALBATRON", layout="wide")
 
 class ReportPDF(FPDF):
-    def header(self):
-        try:
-            self.image(LOGO_PATH, x=10, y=8, w=50)  # Aumentamos visibilidad
-        except RuntimeError:
-            self.set_font("Arial", "B", 12)
-            self.set_text_color(255, 0, 0)
-            self.cell(0, 10, "Logo no encontrado", ln=True)
 
             self.set_font("Arial", "B", 14)
             self.set_xy(70, 10)
