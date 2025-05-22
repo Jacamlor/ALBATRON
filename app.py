@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 from fpdf import FPDF
@@ -64,7 +63,7 @@ if uploaded_file:
     df = pd.read_excel(uploaded_file)
 
     # Limpiar columnas innecesarias
-    df = df.loc[:, ~df.columns.str.contains("^Unnamed|\.1$", regex=True)]
+    df = df.loc[:, ~df.columns.str.contains("^Unnamed|\\.1$", regex=True)]
 
     # Ordenar y procesar
     df_sorted = df.sort_values(by=["Color", "ClaveCriterioX"])
@@ -79,13 +78,14 @@ if uploaded_file:
             pdf.chapter_subtitle(color)
             pdf.chapter_body_with_right_summary(color_group)
 
+    # ⚠️ CORRECCIÓN AQUÍ
     pdf_data = pdf.output(dest='S').encode('latin1')
-pdf_buffer = BytesIO(pdf_data)
-st.success("✅ PDF generado correctamente")
+    pdf_buffer = BytesIO(pdf_data)
 
-st.download_button(
-    label="📥 Descargar PDF",
-    data=pdf_buffer,
-    file_name="informe_por_albaran.pdf",
-    mime="application/pdf"
-)
+    st.success("✅ PDF generado correctamente")
+    st.download_button(
+        label="📥 Descargar PDF",
+        data=pdf_buffer,
+        file_name="informe_por_albaran.pdf",
+        mime="application/pdf"
+    )
