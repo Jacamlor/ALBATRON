@@ -9,9 +9,9 @@ st.set_page_config(page_title="ALBATRON", layout="wide")
 
 class ReportPDF(FPDF):
     def header(self):
-    try:
+        try:
         self.image(LOGO_PATH, x=10, y=8, w=50)  # Aumentamos visibilidad
-    except RuntimeError:
+        except RuntimeError:
         self.set_font("Arial", "B", 12)
         self.set_text_color(255, 0, 0)
         self.cell(0, 10, "Logo no encontrado", ln=True)
