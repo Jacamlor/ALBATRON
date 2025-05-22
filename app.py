@@ -62,7 +62,7 @@ class ReportPDF(FPDF):
             else:
                 self.ln()
 
-st.title("📄 Generador de Informes PDF desde TXT")
+st.title("📄 ALBATRON")
 
 uploaded_file = st.file_uploader("Sube tu archivo TXT (tabulado)", type=["txt"])
 if uploaded_file:
